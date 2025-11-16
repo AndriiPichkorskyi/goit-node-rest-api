@@ -1,4 +1,4 @@
-# 🚀 goit-node-rest-api (HW-05: REST API + Sequelize/PostgreSQL)
+# 🚀 goit-node-rest-api (HW-03: REST API + Sequelize/PostgreSQL)
 
 Цей проєкт реалізує **REST API** для управління контактами, використовуючи **Node.js**, **Express.js** та **PostgreSQL** як базу даних з ORM **Sequelize**.
 
