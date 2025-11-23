@@ -1,20 +1,32 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import Contact from "../db/models/Contacts.js";
 
-async function listContacts() {
+async function listContacts({ page, limit, favorite, owner }) {
   // Повертає масив контактів.
-  return Contact.findAll();
+  const options = {
+    where: {
+      owner,
+    },
+  };
+
+  if (limit) {
+    options.limit = limit;
+    if (page && Number(page) > 0) {
+      options.offset = (Number(page) - 1) * Number(limit);
+    }
+  }
+  if (favorite === "true") options.where.favorite = true;
+
+  return Contact.findAll(options);
 }
 
-async function getContactById(contactId) {
+async function getContactById(where) {
   // Повертає об'єкт контакту з таким id. Повертає null, якщо контакт з таким id не знайдений.
-  return Contact.findByPk(contactId);
+  return Contact.findOne({ where });
 }
 
-async function removeContact(contactId) {
+async function removeContact({ id, owner }) {
   // Повертає об'єкт видаленого контакту. Повертає null, якщо контакт з таким id не знайдений.
-  const contact = await getContactById(contactId);
+  const contact = await getContactById({ id, owner });
   if (!contact) return null;
   await contact.destroy();
   return contact;
@@ -25,16 +37,16 @@ async function addContact(payload) {
   return Contact.create(payload);
 }
 
-async function updateContact(contactId, payload) {
-  const contact = await getContactById(contactId);
+async function updateContact(where, payload) {
+  const contact = await getContactById(where);
   if (!contact) return null;
 
   await contact.update(payload);
   return contact;
 }
 
-async function updateStatusContact(contactId, payload) {
-  const contact = await getContactById(contactId);
+async function updateStatusContact(where, payload) {
+  const contact = await getContactById(where);
   if (!contact) return null;
 
   await contact.update(payload);
