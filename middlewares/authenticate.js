@@ -14,7 +14,7 @@ export default async function authenticate(req, res, next) {
   const { payload, error } = verifyToken(token);
 
   if (error) throw HttpError(401, "Not authorized");
-  const user = await usersServices.findUser({ id: payload.id });
+  const user = await usersServices.findUser({ id: payload.id, token });
 
   if (!user || !user.token) {
     return next(HttpError(401, "Not authorized"));
