@@ -1,8 +1,5 @@
 import Joi from "joi";
-import {
-  emailRegExp,
-  subscriptionEnum,
-} from "../db/constants/authConstants.js";
+import { emailRegExp, subscriptionEnum } from "../constants/authConstants.js";
 
 export const registrationSchema = Joi.object({
   email: Joi.string().pattern(emailRegExp).required().messages({

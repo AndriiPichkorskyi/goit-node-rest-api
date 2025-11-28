@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { emailRegExp } from "../db/constants/authConstants.js";
+import { emailRegExp } from "../constants/authConstants.js";
 
 export const createContactSchema = Joi.object({
   name: Joi.string().required(),

@@ -1,4 +1,8 @@
+import fs from "node:fs/promises";
+import { STORAGE_AVATARS } from "../constants/folders.js";
 import usersServices from "../services/authServices.js";
+import path from "node:path";
+import HttpError from "../helpers/HttpError.js";
 
 export const registerUser = async (req, res) => {
   const newUser = await usersServices.singupUser(req.body);
@@ -6,6 +10,7 @@ export const registerUser = async (req, res) => {
     user: {
       email: newUser.email,
       subscription: newUser.subscription,
+      avatarURL: newUser.avatarURL,
     },
   });
 };
@@ -18,6 +23,7 @@ export const loginUser = async (req, res) => {
     user: {
       email: user.email,
       subscription: user.subscription,
+      avatarURL: user.avatarURL,
     },
   });
 };
@@ -31,12 +37,37 @@ export const getCurrentUser = async (req, res) => {
   res.status(200).json({
     email: req.user.email,
     subscription: req.user.subscription,
+    avatarURL: req.user.avatarURL,
   });
 };
 
 export const updateSubscription = async (req, res) => {
-  const subscription = await usersServices.updateSubscription(
-    user,
-    req.body.subscription
-  );
+  await usersServices.updateSubscription(req.user, req.body.subscription);
+
+  res.status(200).json({
+    email: req.user.email,
+    subscription: req.user.subscription,
+  });
+};
+
+export const updateAvatar = async (req, res) => {
+  if (!req.file) {
+    throw HttpError(400, "Avatar file is required");
+  }
+
+  const { path: temporaryName, filename } = req.file;
+  const fullFilePath = path.join(STORAGE_AVATARS, filename);
+
+  try {
+    await fs.rename(temporaryName, fullFilePath);
+  } catch (error) {
+    await fs.unlink(temporaryName);
+    throw HttpError(500, error);
+  }
+
+  const newFilePath = fullFilePath.split("public")[1];
+
+  await usersServices.updateAvatar(req.user, newFilePath);
+
+  res.status(200).json({ avatarURL: newFilePath });
 };

@@ -12,7 +12,12 @@ import authRouter from "./routes/authRouter.js";
 import notFoundHander from "./middlewares/notFoundHandler.js";
 import errorHandler from "./middlewares/errorHandler.js";
 
-const app = express();
+import { createFolderIsNotExist } from "./helpers/createFolderIsNotExist.js";
+import { PUBLIC_PATH, STORAGE_AVATARS, TEMP_DIR } from "./constants/folders.js";
+
+const app = express(PUBLIC_PATH);
+
+app.use(express.static(PUBLIC_PATH));
 
 app.use(morgan("tiny"));
 app.use(cors());
@@ -38,9 +43,14 @@ try {
 const port = Number(process.env.PORT) | 3000;
 
 app.listen(port, () => {
+  createFolderIsNotExist(PUBLIC_PATH);
+  createFolderIsNotExist(TEMP_DIR);
+  createFolderIsNotExist(STORAGE_AVATARS);
+
   console.log(
     styleText(["bgMagenta"], "Server is running.") +
       styleText(["bgMagenta"], " Use our API on port: ") +
       styleText(["green", "bgMagenta"], String(port))
   );
+  console.log(styleText(["yellow"], ">>> >>> >>> http://localhost:" + port));
 });

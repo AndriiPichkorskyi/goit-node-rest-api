@@ -2,6 +2,7 @@ import User from "../db/models/Users.js";
 import HttpError from "../helpers/HttpError.js";
 import bcrypt from "bcrypt";
 import { generateToken } from "../helpers/generateToken.js";
+import gravatar from "gravatar";
 
 async function singupUser(payload) {
   const user = await User.findOne({
@@ -10,6 +11,14 @@ async function singupUser(payload) {
     },
   });
   if (user) throw HttpError(409, "Email in use");
+
+  const avatarURL = gravatar.url(payload.email, {
+    s: "200",
+    r: "pg",
+    protocol: "https",
+  });
+
+  Object.assign(payload, { avatarURL });
 
   try {
     return User.create(payload);
@@ -52,7 +61,11 @@ async function logoutUser(user) {
 }
 
 async function updateSubscription(user, subscription) {
-  await user.update({ subscription });
+  return user.update({ subscription });
+}
+
+async function updateAvatar(user, newFilePath) {
+  return user.update({ avatarURL: newFilePath });
 }
 
 export default {
@@ -61,4 +74,5 @@ export default {
   findUser,
   logoutUser,
   updateSubscription,
+  updateAvatar,
 };
