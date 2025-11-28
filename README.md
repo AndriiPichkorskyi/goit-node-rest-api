@@ -1,82 +1,275 @@
-# 🔐 goit-node-rest-api (HW-07: Auth, JWT & Sequelize)
+# Contacts API
 
-Цей проєкт реалізує **захищений REST API** для управління персональними контактами. Впроваджено повний цикл **аутентифікації/авторизації** користувачів за допомогою **JSON Web Tokens (JWT)** та бібліотеки **`bcrypt`** для хешування паролів.
+REST API для управління контактами з автентифікацією користувачів та завантаженням аватарів.
 
-## 🌟 Ключові особливості
+## Технології
 
-- **База даних:** PostgreSQL з ORM Sequelize.
-- **Авторизація:** Захист усіх маршрутів контактів через JWT.
-- **Персоналізація:** Кожен користувач бачить лише свої контакти (`owner` field).
-- **Додатково:** Підтримка пагінації, фільтрації за статусом `favorite` та оновлення підписки.
+- **Node.js** + **Express.js**
+- **Sequelize** (PostgreSQL)
+- **JWT** для автентифікації
+- **Multer** для завантаження файлів
+- **Bcrypt** для хешування паролів
+- **Gravatar** для автоматичних аватарів
 
----
+## Встановлення
 
-## 🛠️ Встановлення та запуск
+1. Клонуйте репозиторій:
 
-### 1\. Налаштування середовища
+```bash
+git clone <repository-url>
+cd <project-folder>
+```
 
-Для роботи застосунку необхідні змінні середовища, які потрібно розмістити у файлі **`.env`** у корені проєкту:
-
-| Змінна       | Призначення                         | Приклад                  |
-| :----------- | :---------------------------------- | :----------------------- |
-| `PORT`       | Порт сервера                        | `3000`                   |
-| `DATABASE_*` | Параметри підключення до PostgreSQL | `DATABASE_USER=postgres` |
-| `JWT_SECRET` | Секретний ключ для підпису токенів  | `super_secret_key_123`   |
-
-### 2\. Встановлення залежностей
+2. Встановіть залежності:
 
 ```bash
 npm install
 ```
 
-### 3\. Запуск сервера
+3. Створіть файл `.env` та налаштуйте змінні оточення:
+
+```env
+# Database
+DATABASE_DIALECT=postgres
+DATABASE_USER=your_username
+DATABASE_PASSWORD=your_password
+DATABASE_HOST=your_host
+DATABASE_NAME=your_database
+DATABASE_PORT=5432
+
+# JWT
+JWT_SECRET=your_jwt_secret_key
+
+# Server
+PORT=3000
+```
+
+4. Запустіть сервер:
 
 ```bash
 npm start
 ```
 
-Сервер запуститься на вказаному порту.
+Сервер буде доступний за адресою: `http://localhost:3000`
 
----
+## API Endpoints
 
-## 🔗 Ендпоінти API
+### Автентифікація
 
-### 🔑 Авторизація (`/api/auth`)
+#### Реєстрація користувача
 
-| Метод     | Шлях            | Опис                                               | Захист |
-| :-------- | :-------------- | :------------------------------------------------- | :----- |
-| **POST**  | `/register`     | Реєстрація нового користувача.                     | ❌     |
-| **POST**  | `/login`        | Вхід та отримання JWT.                             | ❌     |
-| **POST**  | `/logout`       | Вихід (видалення токена з БД).                     | ✅     |
-| **GET**   | `/current`      | Отримання даних поточного користувача.             | ✅     |
-| **PATCH** | `/subscription` | Оновлення підписки (`starter`, `pro`, `business`). | ✅     |
+```http
+POST /api/auth/register
+Content-Type: application/json
 
-### 📝 Контакти (`/api/contacts`)
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
 
-Всі маршрути вимагають передачі валідного JWT у заголовку **`Authorization: Bearer <token>`**.
+**Відповідь:**
 
-| Метод      | Шлях            | Опис                                                                       |
-| :--------- | :-------------- | :------------------------------------------------------------------------- |
-| **GET**    | `/`             | Отримати список контактів (підтримує `?page=&limit=` та `?favorite=true`). |
-| **GET**    | `/:id`          | Отримати один контакт.                                                     |
-| **POST**   | `/`             | Створити новий контакт.                                                    |
-| **PUT**    | `/:id`          | Повне оновлення контакту.                                                  |
-| **DELETE** | `/:id`          | Видалити контакт.                                                          |
-| **PATCH**  | `/:id/favorite` | Оновити статус `favorite`.                                                 |
+```json
+{
+  "user": {
+    "email": "user@example.com",
+    "subscription": "starter",
+    "avatarURL": "https://gravatar.com/avatar/..."
+  }
+}
+```
 
----
+#### Вхід
 
-## 📂 Структура проєкту
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+**Відповідь:**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "email": "user@example.com",
+    "subscription": "starter",
+    "avatarURL": "https://gravatar.com/avatar/..."
+  }
+}
+```
+
+#### Вихід
+
+```http
+POST /api/auth/logout
+Authorization: Bearer {token}
+```
+
+#### Отримати поточного користувача
+
+```http
+GET /api/auth/current
+Authorization: Bearer {token}
+```
+
+#### Оновити підписку
+
+```http
+PATCH /api/auth/subscription
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "subscription": "pro"
+}
+```
+
+Доступні підписки: `starter`, `pro`, `business`
+
+#### Оновити аватар
+
+```http
+PATCH /api/auth/avatars
+Authorization: Bearer {token}
+Content-Type: multipart/form-data
+
+avatar: <file>
+```
+
+**Відповідь:**
+
+```json
+{
+  "avatarURL": "/avatars/user_1234567890_a5_avatar.jpg"
+}
+```
+
+### Контакти
+
+Всі маршрути контактів вимагають автентифікації (токен в заголовку).
+
+#### Отримати всі контакти
+
+```http
+GET /api/contacts
+Authorization: Bearer {token}
+```
+
+**Query параметри:**
+
+- `page` - номер сторінки (опційно)
+- `limit` - кількість на сторінці (опційно)
+- `favorite` - фільтр за обраними (`true`/`false`, опційно)
+
+#### Отримати контакт за ID
+
+```http
+GET /api/contacts/:id
+Authorization: Bearer {token}
+```
+
+#### Створити контакт
+
+```http
+POST /api/contacts
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "phone": "+380123456789"
+}
+```
+
+#### Оновити контакт
+
+```http
+PUT /api/contacts/:id
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "phone": "+380987654321"
+}
+```
+
+#### Оновити статус обраного
+
+```http
+PATCH /api/contacts/:id/favorite
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "favorite": true
+}
+```
+
+#### Видалити контакт
+
+```http
+DELETE /api/contacts/:id
+Authorization: Bearer {token}
+```
+
+## Структура проєкту
 
 ```
-goit-node-rest-api/
-├── controllers/          # Контролери (authControllers, contactsControllers)
-├── db/                   # Моделі та налаштування БД
-├── helpers/              # Допоміжні функції (HttpError, generateToken)
-├── middlewares/          # Мідлвари (authenticate, validateBody)
-├── routes/               # Маршрути (authRouter, contactsRouter)
-├── schemas/              # Схеми валідації Joi
-├── services/             # Бізнес-логіка та CRUD-операції з БД
-├── .env                  # Змінні оточення
-└── app.js                # Точка входу
+├── controllers/          # Контролери для обробки запитів
+├── db/
+│   ├── models/          # Моделі Sequelize
+│   ├── sequelize.js     # Конфігурація Sequelize
+│   └── connectDatabase.js
+├── helpers/             # Допоміжні функції
+├── middlewares/         # Middleware (auth, upload, validation)
+├── routes/              # Маршрути API
+├── schemas/             # Схеми валідації Joi
+├── services/            # Бізнес-логіка
+├── constants/           # Константи
+├── public/              # Статичні файли
+│   └── avatars/        # Аватари користувачів
+├── temp/                # Тимчасові файли
+├── .env                 # Змінні оточення
+└── app.js              # Головний файл додатку
+```
+
+## Особливості
+
+- 🔐 JWT автентифікація з терміном дії 24 години
+- 🖼️ Автоматична генерація аватарів через Gravatar
+- 📤 Завантаження власних аватарів (до 5MB)
+- 🔒 Захист маршрутів через middleware
+- ✅ Валідація даних через Joi
+- 🗄️ PostgreSQL з Sequelize ORM
+- 📁 Організована структура файлів
+
+## Обробка помилок
+
+API повертає стандартні HTTP коди статусу:
+
+- `200` - Успішний запит
+- `201` - Ресурс створено
+- `204` - Успішно, без контенту
+- `400` - Невірний запит
+- `401` - Не авторизовано
+- `404` - Не знайдено
+- `409` - Конфлікт (email вже існує)
+- `500` - Помилка сервера
+
+Формат помилок:
+
+```json
+{
+  "message": "Опис помилки"
+}
 ```
