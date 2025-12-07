@@ -6,11 +6,14 @@ import {
   getCurrentUser,
   updateSubscription,
   updateAvatar,
+  verifyController,
+  resendVerifyController,
 } from "../controllers/authControllers.js";
 import validateBody from "../helpers/validateBody.js";
 import {
   registrationSchema,
   subscriptionSchema,
+  emailSchema,
 } from "../schemas/authSchemas.js";
 import isEmptyBody from "../middlewares/isEmptyBody.js";
 import authenticate from "../middlewares/authenticate.js";
@@ -24,6 +27,8 @@ authRouter.post(
   validateBody(registrationSchema),
   registerUser
 );
+authRouter.get("/verify/:verificationToken", verifyController);
+authRouter.post("/verify", validateBody(emailSchema), resendVerifyController);
 authRouter.post(
   "/login",
   isEmptyBody,

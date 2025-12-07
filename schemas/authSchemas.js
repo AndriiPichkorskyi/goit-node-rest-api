@@ -18,3 +18,9 @@ export const subscriptionSchema = Joi.object({
   "any.required":
     "The {{#label}} field is required. Valid values are 'starter', 'pro' or 'business'",
 });
+
+export const emailSchema = Joi.object({
+  email: Joi.string().pattern(emailRegExp).required().messages({
+    "string.email": "Please enter a valid email address.",
+  }),
+});

@@ -1,10 +1,12 @@
 import User from "../db/models/Users.js";
 import HttpError from "../helpers/HttpError.js";
 import bcrypt from "bcrypt";
-import { generateToken } from "../helpers/generateToken.js";
+import { generateToken, verifyToken } from "../helpers/generateToken.js";
 import gravatar from "gravatar";
+import { sendEmail } from "../helpers/sendEmail.js";
+import { createVerifyEmail } from "../helpers/createVerifyEmail.js";
 
-async function singupUser(payload) {
+async function signupUser(payload) {
   const user = await User.findOne({
     where: {
       email: payload.email,
@@ -21,11 +23,34 @@ async function singupUser(payload) {
   Object.assign(payload, { avatarURL });
 
   try {
-    return User.create(payload);
+    const verificationToken = generateToken({ email: payload.email });
+    const newUser = await User.create({ ...payload, verificationToken });
+
+    await sendEmail(createVerifyEmail(payload.email, verificationToken));
+
+    return newUser;
   } catch (error) {
     throw HttpError(400, error.message);
   }
 }
+
+const verifyUser = async (verificationToken) => {
+  const { payload, error } = verifyToken(verificationToken);
+  if (error) throw HttpError(401, error.message);
+
+  const user = await findUser({ email: payload.email });
+  if (user.verify) throw HttpError(401, "Verification has already been passed");
+
+  await user.update({ verify: true, verificationToken: "" });
+};
+
+const resendVerifyUser = async ({ email }) => {
+  const user = await findUser({ email });
+  if (!user) throw HttpError(401, "Email not found");
+  if (user.verify) throw HttpError(401, "Verification has already been passed");
+
+  await sendEmail(createVerifyEmail(email, user.verificationToken));
+};
 
 async function loginUser(payload) {
   const user = await User.findOne({
@@ -34,6 +59,7 @@ async function loginUser(payload) {
     },
   });
   if (!user) throw HttpError(401, "Email or password is wrong");
+  if (!user.verify) throw HttpError(401, "Email not verified");
 
   const passwordCompare = await bcrypt.compare(payload.password, user.password);
   if (!passwordCompare) throw HttpError(401, "Email or password is wrong");
@@ -69,8 +95,10 @@ async function updateAvatar(user, newFilePath) {
 }
 
 export default {
-  singupUser,
+  signupUser,
   loginUser,
+  verifyUser,
+  resendVerifyUser,
   findUser,
   logoutUser,
   updateSubscription,

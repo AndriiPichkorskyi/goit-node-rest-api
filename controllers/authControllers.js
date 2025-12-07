@@ -5,13 +5,27 @@ import path from "node:path";
 import HttpError from "../helpers/HttpError.js";
 
 export const registerUser = async (req, res) => {
-  const newUser = await usersServices.singupUser(req.body);
+  const newUser = await usersServices.signupUser(req.body);
   res.status(201).json({
     user: {
       email: newUser.email,
       subscription: newUser.subscription,
       avatarURL: newUser.avatarURL,
     },
+  });
+};
+
+export const verifyController = async (req, res) => {
+  const { verificationToken } = req.params;
+  await usersServices.verifyUser(verificationToken);
+  return res.status(200).json({ message: "Verification successful" });
+};
+
+export const resendVerifyController = async (req, res) => {
+  await usersServices.resendVerifyUser(req.body);
+
+  res.json({
+    message: "Verification email sent",
   });
 };
 
