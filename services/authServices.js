@@ -39,15 +39,15 @@ const verifyUser = async (verificationToken) => {
   if (error) throw HttpError(401, error.message);
 
   const user = await findUser({ email: payload.email });
-  if (user.verify) throw HttpError(401, "Verification has already been passed");
+  if (user.verify) throw HttpError(400, "Verification has already been passed");
 
   await user.update({ verify: true, verificationToken: "" });
 };
 
 const resendVerifyUser = async ({ email }) => {
   const user = await findUser({ email });
-  if (!user) throw HttpError(401, "Email not found");
-  if (user.verify) throw HttpError(401, "Verification has already been passed");
+  if (!user) throw HttpError(404, "Email not found");
+  if (user.verify) throw HttpError(400, "Verification has already been passed");
 
   await sendEmail(createVerifyEmail(email, user.verificationToken));
 };
